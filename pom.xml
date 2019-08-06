@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.wingify.simplePipeline</groupId>
+    <artifactId>simplePipeline</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+            <maven.compiler.source>1.8</maven.compiler.source>
+            <maven.compiler.target>1.8</maven.compiler.target>
+
+            <!-- GCP Project Settings -->
+
+            <!-- add following values -->
+            <gcp.projectID></gcp.projectID>
+            <gcs.urlBase></gcs.urlBase>
+            <gcs.bucketName></gcs.bucketName>
+
+            <isProd>false</isProd>
+            <isPubsubEmulator>false</isPubsubEmulator>
+
+            <!-- GCS Properties -->
+            <gcs.tempLocation>/temp</gcs.tempLocation>
+            <gcs.stagingLocation>/staging</gcs.stagingLocation>
+
+            <!-- Data Flow Properties -->
+            <df.region>us-central1</df.region>
+            <df.numWorkers>1</df.numWorkers>
+            <df.maxNumWorkers>2</df.maxNumWorkers>
+            <df.workerMachineType>n1-highcpu-4</df.workerMachineType>
+            <df.projectVersion>v1</df.projectVersion>
+
+            <!-- Redis Properties -->
+            <redis.host>127.0.0.1</redis.host>
+            <redis.port>6379</redis.port>
+
+            <!-- Pubsub emulator Properties -->
+            <pubsub.emulator.host>localhost</pubsub.emulator.host>
+            <pubsub.emulator.port>8085</pubsub.emulator.port>
+        </properties>
+
+        <build>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.8.0</version>
+                    <configuration>
+                        <compilerArgs>
+                            <!--<arg>-verbose</arg>-->
+                            <!--<arg>-Xlint:all,-options,-path</arg>-->
+                            <arg>-Xlint:unchecked</arg>
+                        </compilerArgs>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.avro</groupId>
+                    <artifactId>avro-maven-plugin</artifactId>
+                    <version>1.8.2</version>
+                    <executions>
+                        <execution>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>schema</goal>
+                            </goals>
+                            <configuration>
+                                <sourceDirectory>${project.basedir}/src/main/resources/</sourceDirectory>
+                                <outputDirectory>${project.basedir}/src/main/java/</outputDirectory>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>properties-maven-plugin</artifactId>
+                    <version>1.0.0</version>
+                    <executions>
+                        <execution>
+                            <phase>generate-resources</phase>
+                            <goals>
+                                <goal>write-project-properties</goal>
+                            </goals>
+                            <configuration>
+                                <param>${isProd}</param>
+                                <param>${gcp.projectID}</param>
+
+                                <param>${df.region}</param>
+                                <param>${df.numWorkers}</param>
+                                <param>${df.maxNumWorkers}</param>
+                                <param>${df.workerMachineType}</param>
+                                <param>${df.projectVersion}</param>
+
+                                <param>${isProd}</param>
+                                <param>${isPubsubEmulator}</param>
+
+                                <param>${appv3.hashSalt}</param>
+                                <param>${appv3.baseUrl}</param>
+
+                                <param>${gcp.projectID}</param>
+                                <param>${gcs.urlBase}</param>
+                                <param>${gcs.stagingLocation}</param>
+                                <param>${gcs.bucketName}</param>
+                                <param>${gcs.tempLocation}</param>
+
+                                <param>${redis.host}</param>
+                                <param>${redis.port}</param>
+
+                                <param>${pubsub.emulator.host}</param>
+                                <param>${pubsub.emulator.port}</param>
+
+                                <outputFile>src/main/resources/application.properties</outputFile>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+            <resources>
+                <resource>
+                    <directory>src/main/resources</directory>
+                    <includes>
+                        <include>application.properties</include>
+                    </includes>
+                </resource>
+            </resources>
+        </build>
+
+        <dependencies>
+            <!-- https://mvnrepository.com/artifact/org.apache.beam/beam-sdks-java-core -->
+            <dependency>
+                <groupId>org.apache.beam</groupId>
+                <artifactId>beam-sdks-java-core</artifactId>
+                <version>2.14.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>google-cloud-storage</artifactId>
+                <version>1.66.0</version>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.apache.beam/beam-sdks-java-io-redis -->
+            <dependency>
+                <groupId>org.apache.beam</groupId>
+                <artifactId>beam-sdks-java-io-redis</artifactId>
+                <version>2.14.0</version>
+            </dependency>
+
+            <!-- Lombok -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.4</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.apache.beam/beam-sdks-java-io-jdbc -->
+            <dependency>
+                <groupId>org.apache.beam</groupId>
+                <artifactId>beam-sdks-java-io-jdbc</artifactId>
+                <version>2.14.0</version>
+            </dependency>
+
+            <!-- Hikari Connection Pooling -->
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>3.3.1</version>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.8</version>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.apache.beam/beam-runners-direct-java -->
+            <dependency>
+                <groupId>org.apache.beam</groupId>
+                <artifactId>beam-runners-direct-java</artifactId>
+                <version>2.14.0</version>
+            </dependency>
+
+            <!-- DataFlow runner -->
+            <dependency>
+                <groupId>org.apache.beam</groupId>
+                <artifactId>beam-runners-google-cloud-dataflow-java</artifactId>
+                <version>2.14.0</version>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.apache.beam/beam-sdks-java-io-google-cloud-platform -->
+            <dependency>
+                <groupId>org.apache.beam</groupId>
+                <artifactId>beam-sdks-java-io-google-cloud-platform</artifactId>
+                <version>2.14.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.api.grpc</groupId>
+                        <artifactId>grpc-google-common-protos</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>2.7.4</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>2.7.4</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.7.4</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>21.0</version>
+            </dependency>
+            <dependency>
+                <groupId>is.tagomor.woothee</groupId>
+                <artifactId>woothee-java</artifactId>
+                <version>1.7.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.maxmind.geoip</groupId>
+                <artifactId>geoip-api</artifactId>
+                <version>1.3.1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.5</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+                <version>1.5.10.RELEASE</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-configuration</groupId>
+                <artifactId>commons-configuration</artifactId>
+                <version>1.6</version>
+            </dependency>
+
+            <!-- Pubsub -->
+            <dependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>google-cloud-pubsub</artifactId>
+                <version>1.62.0</version>
+            </dependency>
+
+            <!-- Fernet -->
+            <!-- https://github.com/l0s/fernet-java8 -->
+            <dependency>
+                <groupId>com.macasaet.fernet</groupId>
+                <artifactId>fernet-java8</artifactId>
+                <version>1.3.3</version>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.apache.beam/beam-sdks-java-io-parquet -->
+            <dependency>
+                <groupId>org.apache.beam</groupId>
+                <artifactId>beam-sdks-java-io-parquet</artifactId>
+                <version>2.14.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-beanutils</groupId>
+                        <artifactId>commons-beanutils-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-all</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>3.14.1</version>
+            </dependency>
+
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>1.6</version>
+            </dependency>
+
+        </dependencies>
+</project>
