@@ -13,7 +13,10 @@ def read_account_ids_from_file(filename):
             accounts.append(int(account))
     return accounts
 
-def publish_message(accounts,x):
+def generate_uuids(uuid_count):
+    return [uuid.uuid4().hex.upper() for _ in range(uuid_count)]
+
+def publish_message(uuids, x):
     project_id = "project-name"
     batch_settings = pubsub_v1.types.BatchSettings(
         max_bytes=2048,  # One kilobyte
@@ -21,18 +24,16 @@ def publish_message(accounts,x):
     )
     publisher = pubsub_v1.PublisherClient(batch_settings)
     topic_name = "topic-name"
-    
-    topic_path = publisher.topic_path(project_id, topic_name)
 
-    for n in range(x):
-        for account in accounts :
-            m_id = uuid.uuid4().hex.upper()
-            data = {"uuid" : account, "val" : "1"}
+    topic_path = publisher.topic_path(project_id, topic_name)
+    for _ in range(x):
+        for uuid in uuids:
+            message_id = uuid.uuid4().hex.upper()
+            data = {"uuid" : uuid, "val" : "1"}
             msg = json.dumps(data).encode('utf-8')
-            future = publisher.publish(topic_path,data = msg , m_id = m_id)
+            future = publisher.publish(topic_path, data=msg, message_id=message_id)
 
 if __name__ == '__main__':
-    filename = 'accounts.txt'
-    acc_ids = read_account_ids_from_file(filename)
-    publish_message(acc_ids,10000)
+    uuids = generate_uuids(105)
+    publish_message(uuids, 10000)
     print('Published messages.')

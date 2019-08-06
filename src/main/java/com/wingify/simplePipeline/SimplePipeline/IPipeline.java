@@ -11,7 +11,6 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -42,16 +41,16 @@ public interface IPipeline extends Serializable {
 		List<String> details = new ArrayList<>();
 		String empty = "";
       	for (int i = 1 ; i <= 110 ; i++ )empty += "_";
-      	for (Map.Entry<String, String> entry : configProps.getMap().entrySet()){
+      	for (Map.Entry<String, String> entry : configProps.getMap().entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            if (value != null && !value.equals("") && !Pattern.compile(Pattern.quote("pass"), Pattern.CASE_INSENSITIVE).matcher(key).find()){
+            if (value != null && !value.equals("")
+					&& !Pattern.compile(Pattern.quote("pass"), Pattern.CASE_INSENSITIVE).matcher(key).find()) {
             	String pair = key + " : " + value;
 				details.add(empty.substring(0,110-pair.length()) + " " + pair);
             }
         }
         return details;
-
     }
 
 	default DataflowPipelineOptions loadDefaultPipelineOptions(Boolean isPubsubEmulator) {
@@ -105,8 +104,7 @@ public interface IPipeline extends Serializable {
 		}
 		return true;
 	}
-
-
+	
 	void run();
 
 }

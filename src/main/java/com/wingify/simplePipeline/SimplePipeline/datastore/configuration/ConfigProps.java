@@ -8,15 +8,15 @@ public class ConfigProps implements Serializable {
 
     private Map<String, String> map;
 
-    public ConfigProps(){
+    public ConfigProps() {
         map = new HashMap<String, String>();
     }
 
-    public void addToMap(String key, String value){
+    public void addToMap(String key, String value) {
         this.map.put(key, value);
     }
 
-    public Map<String, String> getMap(){
+    public Map<String, String> getMap() {
         return this.map;
     }
 

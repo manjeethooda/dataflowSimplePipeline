@@ -27,23 +27,23 @@ public class SimplePipeline implements IPipeline {
         final String SIMPLE_PIPELINE_SUBSCRIPTION = "";
         Pipeline pipeline = Pipeline.create(this.options);
 
-                // Calculate 1-minute counts of events per user.
-                // stage 1 : reading from pubsub
-                pipeline.apply(PubsubIO.readMessagesWithAttributes()
-                        .fromSubscription(SIMPLE_PIPELINE_SUBSCRIPTION)
-                        .withIdAttribute("m_id"))
+        // Calculate 1-minute counts of events per user.
+        // stage 1 : reading from pubsub
+        pipeline.apply(PubsubIO.readMessagesWithAttributes()
+                .fromSubscription(SIMPLE_PIPELINE_SUBSCRIPTION)
+                .withIdAttribute("m_id"))
 
-                        // stage 2 : passing through parser
-                        .apply(ParDo.of(new SimplePipelineParser()))
-                        .setCoder(SerializableCoder.of(SimplePipelineMessage.class))
+                // stage 2 : passing through parser
+                .apply(ParDo.of(new SimplePipelineParser()))
+                .setCoder(SerializableCoder.of(SimplePipelineMessage.class))
 
-                        // stage 3 : make KV pair
-                        .apply(WithKeys.of((SimplePipelineMessage elem) -> elem.getPrimaryRecordKeyString())
-                                .withKeyType(TypeDescriptor.of(String.class)))
+                // stage 3 : make KV pair
+                .apply(WithKeys.of((SimplePipelineMessage elem) -> elem.getPrimaryRecordKeyString())
+                        .withKeyType(TypeDescriptor.of(String.class)))
 
 
-                        .apply(Window.<KV<String,SimplePipelineMessage>>into(
-                                FixedWindows.of(Duration.standardSeconds(1))).triggering(
+                .apply(Window.<KV<String,SimplePipelineMessage>>into(
+                        FixedWindows.of(Duration.standardSeconds(1))).triggering(
                                 Repeatedly.forever(AfterFirst.of(
                                         AfterPane.elementCountAtLeast(1),
                                         AfterProcessingTime.
@@ -53,22 +53,22 @@ public class SimplePipeline implements IPipeline {
                         ).withAllowedLateness(
                                 Duration.ZERO
                         ).discardingFiredPanes())
-                        
-                        .apply("GroupByUuid", GroupByKey.create())
-                        .apply(ParDo.of(new DoFn<KV<String, Iterable<SimplePipelineMessage>>, KV<String,String>>() {
 
-                            @ProcessElement
-                            public void processElement(ProcessContext c) {
-                              Iterable<SimplePipelineMessage> iterable = c.element().getValue();
-                              for(SimplePipelineMessage simplePipelineMessage : iterable){
-                                  c.output(KV.of(simplePipelineMessage.getUuid(),"1"));
-                              }
-                            }
-                        }))
-                        .apply(Reshuffle.viaRandomKey())
+                .apply("GroupByUuid", GroupByKey.create())
+                .apply(ParDo.of(new DoFn<KV<String, Iterable<SimplePipelineMessage>>, KV<String,String>>() {
+                    @ProcessElement
+                    public void processElement(ProcessContext c) {
+                        Iterable<SimplePipelineMessage> iterable = c.element().getValue();
+                        for(SimplePipelineMessage simplePipelineMessage : iterable) {
+                            c.output(KV.of(simplePipelineMessage.getUuid(),"1"));
+                        }
+                    }
+                }))
+                .apply(Reshuffle.viaRandomKey())
 
-                        // @ TODO : add redis host and port before running pipeline
-                        .apply("push-to-redis-sink",RedisIO.write().withEndpoint("",).withMethod(RedisIO.Write.Method.INCRBY));
+                // @ TODO : add redis host and port before running pipeline
+                .apply("push-to-redis-sink",RedisIO.write().withEndpoint("",)
+                        .withMethod(RedisIO.Write.Method.INCRBY));
 
         pipeline.run();
     }
